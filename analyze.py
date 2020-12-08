@@ -12,7 +12,8 @@ dict_dataset_names = {
     'oxford_town': 'Oxford Town Center Dataset',
     'mall': 'Mall Dataset',
     'grand_central': 'Train Station Dataset',
-    'ucsdpeds': 'UCSD Pedestrian Dataset'
+    'ucsdpeds': 'UCSD Pedestrian Dataset',
+    'lstn': 'LSTN Dataset'
 }
 
 path_results = 'results/test_faster_rcnn'  # faster RCNN results

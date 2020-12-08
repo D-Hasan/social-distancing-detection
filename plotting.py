@@ -7,7 +7,8 @@ dict_dataset_places = {
     'oxford_town': 'Oxford Town Urban Street',
     'grand_central': 'New York City Grand Central Terminal',
     'mall': 'An Indoor Mall',
-    'ucsdpeds': 'UCSD Walkway'
+    'ucsdpeds': 'UCSD Walkway',
+    'lstn': 'Public Place in China'
 
 }
 
@@ -21,6 +22,8 @@ def get_roi_pts(dataset, roi_raw, matrix_c2w):
     elif dataset == 'grand_central':
         x1, x2, y1, y2 = roi_raw
     elif dataset == 'ucsdpeds':
+        y1, y2, x1, x2 = roi_raw
+    elif dataset == 'lstn':
         y1, y2, x1, x2 = roi_raw
     else:
         raise Exception('Invalid dataset.')
@@ -47,6 +50,8 @@ def plot_frame_one_row(dataset, img_raw, pts_roi_cam, pts_roi_world, pts_w, pair
         sub_3_lim = (-10, 30, 36, -4)
     elif dataset == 'ucsdpeds':
         sub_3_lim = (-5, 14, 5, -10)
+    elif dataset == 'lstn':
+        sub_3_lim = (0, 25, 10, -10)
     else:
         raise Exception('Invalid dataset.')
 

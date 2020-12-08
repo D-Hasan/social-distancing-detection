@@ -46,14 +46,13 @@ def main(dataset_path, dataset, data_time, detector,stop_plotting,stop_running):
 
 
     # load background and rotation matrix
-    img_bkgd_bev = cv2.imread('calibration/' + dataset + '_background_calibrated.png')
     transform_cam2world = np.loadtxt('calibration/' + dataset + '_matrix_cam2world.txt')
 
     
     statistic_data = []
     i_frame = 0
 
-    images = sorted([image for image in os.listdir(dataset_path) if image[-3:]=='png'])
+    images = sorted([image for image in os.listdir(dataset_path) if image[-3:]=='png' or image[-3:] == 'jpg'])
     for image in images: #loops over frames in the video
         #reads frame and 'ret' is True if frame is read correctly
         img = cv2.imread(os.path.join(dataset_path, image))#[..., np.newaxis]
@@ -171,20 +170,25 @@ if __name__ == '__main__':
     yolo_cfg = 'config/yolov3.cfg'
     yolo_img_size = 416
     yolo_weights = 'weights/yolov3.weights'
-    yolo_conf_thres = 0.4
-    yolo_nms_thres = 0.4
+    yolo_conf_thres = 0.7
+    yolo_nms_thres = 0.3
 
 
-    thr_score = 0.5
+    thr_score = 0.8
 
 
     data_time = 'test'
     # dataset = 'grand_central'
-    dataset_path = 'ucsdpeds/vidf/vidf1_33_000.y'
-    dataset = 'ucsdpeds'
+
+    # dataset_path = 'ucsdpeds/vidf/vidf1_33_000.y'
+    # dataset = 'ucsdpeds'
+    
+    dataset_path = 'lstn_24'
+    dataset = 'lstn'
+    
     # detector = 'hog'
-    # detector = 'faster_rcnn'
-    detector = 'yolo_cnn'
+    detector = 'faster_rcnn'
+    # detector = 'yolo_cnn'
 
     
     
