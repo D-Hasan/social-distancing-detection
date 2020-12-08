@@ -24,6 +24,7 @@ ROIs = {
     'mall': (-2., 8., -7., 7.),
     'grand_central': (-7., 25., 0., 34.),
     'oxford_town':  (0., 14., 5., 28.),
+    'ucsdpeds': (-10., 5., 0., 14.)
 }
 
 def make_gif(results_dir):

@@ -16,8 +16,10 @@ import cv2
 
 from models import Darknet
 
+import warnings
+warnings.filterwarnings("ignore")
 
-def main(dataset, data_time, detector,stop_plotting,stop_running):
+def main(dataset_path, dataset, data_time, detector,stop_plotting,stop_running):
     #Create folder for results
     path_result = os.path.join('results', data_time + '_' + detector, dataset)
     #only creates the folders if they don't exist
@@ -47,31 +49,15 @@ def main(dataset, data_time, detector,stop_plotting,stop_running):
     img_bkgd_bev = cv2.imread('calibration/' + dataset + '_background_calibrated.png')
     transform_cam2world = np.loadtxt('calibration/' + dataset + '_matrix_cam2world.txt')
 
-    # open video of dataset
-    if dataset == 'oxford_town':
-        cap = cv2.VideoCapture(os.path.join('datasets', 'TownCentreXVID.avi'))
-        frame_skip = 10  # oxford town dataset has fps of 25
-        thr_score = 0.9
-    elif dataset == 'mall':
-        cap = cv2.VideoCapture(os.path.join('datasets', 'mall.mp4'))
-        frame_skip = 1
-        thr_score = 0.9
-    elif dataset == 'grand_central':
-        cap = cv2.VideoCapture(os.path.join('datasets', 'grandcentral.avi'))
-        frame_skip = 25  # grand central dataset has fps of 25
-        thr_score = 0.5
-    else:
-        raise Exception('Invalid Dataset')
-
+    
     statistic_data = []
     i_frame = 0
-    while cap.isOpened(): #loops over frames in the video
+
+    images = sorted([image for image in os.listdir(dataset_path) if image[-3:]=='png'])
+    for image in images: #loops over frames in the video
         #reads frame and 'ret' is True if frame is read correctly
-        ret, img = cap.read()
-        if ret is False:
-            break
-        if i_frame > stop_running:
-            break
+        img = cv2.imread(os.path.join(dataset_path, image))#[..., np.newaxis]
+
 
         if i_frame < stop_plotting:
             vis = True
@@ -79,11 +65,11 @@ def main(dataset, data_time, detector,stop_plotting,stop_running):
             vis = False
 
         t0 = time.time()
+
         # convert image from OpenCV format to PyTorch tensor format
         img_t = np.moveaxis(img, -1, 0) / 255
         img_t = torch.tensor(img_t, device=device).float()
 
-        import pdb; pdb.set_trace()
         # pedestrian detection
         if detector == 'faster_rcnn':
             predictions = model([img_t])
@@ -130,6 +116,7 @@ def main(dataset, data_time, detector,stop_plotting,stop_running):
         else:
             humans_idx = np.where(scores > 0.5)[0]
 
+
         for i in humans_idx:
         # extract the bounding box coordinates
             (x1, y1) = (boxes[i][0], boxes[i][1]) #represents 1 corner
@@ -170,12 +157,10 @@ def main(dataset, data_time, detector,stop_plotting,stop_running):
             plt.close(fig)
         # update loop info
         if i_frame % 5 == 0:
-            print('Frame %d - Inference Time: %.2f' % (i_frame, t1 - t0))
+            print('Frame %d of %d - Inference Time: %.2f' % (i_frame, len(images), t1 - t0))
         i_frame += 1
 
     # save statistics
-    # f.close()
-    cap.release()
     cv2.destroyAllWindows()
     pickle.dump(statistic_data, open(os.path.join(path_result, 'statistic_data.p'), 'wb'))
     make_gif(path_result)
@@ -189,12 +174,19 @@ if __name__ == '__main__':
     yolo_conf_thres = 0.4
     yolo_nms_thres = 0.4
 
+
+    thr_score = 0.5
+
+
     data_time = 'test'
     # dataset = 'grand_central'
-    dataset = 'oxford_town'
+    dataset_path = 'ucsdpeds/vidf/vidf1_33_000.y'
+    dataset = 'ucsdpeds'
     # detector = 'hog'
     # detector = 'faster_rcnn'
     detector = 'yolo_cnn'
+
+    
     
 
     print('=========== %s ===========' % dataset)
@@ -203,5 +195,5 @@ if __name__ == '__main__':
 
     stop_plotting = 1050
     stop_running = 1050
-    main(dataset=dataset, data_time=data_time, detector=detector, stop_plotting = stop_plotting, stop_running = stop_running)
+    main(dataset_path=dataset_path, dataset=dataset, data_time=data_time, detector=detector, stop_plotting = stop_plotting, stop_running = stop_running)
 

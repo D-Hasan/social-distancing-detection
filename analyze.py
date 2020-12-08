@@ -11,7 +11,8 @@ from utils import ROIs, count_violation_pairs, decode_data, cal_min_dists_all_fr
 dict_dataset_names = {
     'oxford_town': 'Oxford Town Center Dataset',
     'mall': 'Mall Dataset',
-    'grand_central': 'Train Station Dataset'
+    'grand_central': 'Train Station Dataset',
+    'ucsdpeds': 'UCSD Pedestrian Dataset'
 }
 
 path_results = 'results/test_faster_rcnn'  # faster RCNN results

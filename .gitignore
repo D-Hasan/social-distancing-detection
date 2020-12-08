@@ -8,3 +8,4 @@ results/
 additional_detectors/
 weights/yolo*
 weights/darknet*
+ucsdpeds

@@ -6,7 +6,8 @@ from analyze import dict_dataset_names
 dict_dataset_places = {
     'oxford_town': 'Oxford Town Urban Street',
     'grand_central': 'New York City Grand Central Terminal',
-    'mall': 'An Indoor Mall'
+    'mall': 'An Indoor Mall',
+    'ucsdpeds': 'UCSD Walkway'
 
 }
 
@@ -19,6 +20,8 @@ def get_roi_pts(dataset, roi_raw, matrix_c2w):
         x1, x2, y1, y2 = roi_raw
     elif dataset == 'grand_central':
         x1, x2, y1, y2 = roi_raw
+    elif dataset == 'ucsdpeds':
+        y1, y2, x1, x2 = roi_raw
     else:
         raise Exception('Invalid dataset.')
     # x1, x2, y1, y2 = roi_raw
@@ -42,6 +45,8 @@ def plot_frame_one_row(dataset, img_raw, pts_roi_cam, pts_roi_world, pts_w, pair
         sub_3_lim = (-10, 10, 10, -10)
     elif dataset == 'grand_central':
         sub_3_lim = (-10, 30, 36, -4)
+    elif dataset == 'ucsdpeds':
+        sub_3_lim = (-5, 14, 5, -10)
     else:
         raise Exception('Invalid dataset.')
 
