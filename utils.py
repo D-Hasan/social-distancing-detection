@@ -2,6 +2,10 @@ import numpy as np
 from scipy import stats
 import glob
 from PIL import Image
+import os 
+
+from models import HOG, YOLO, Faster_RCNN, Mask_RCNN
+from dataloaders import VideoLoader, ImageLoader
 
 
 
@@ -20,13 +24,70 @@ COCO_INSTANCE_CATEGORY_NAMES = [
     'clock', 'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush'
 ]
 
-ROIs = {
-    'mall': (-2., 8., -7., 7.),
-    'grand_central': (-7., 25., 0., 34.),
-    'oxford_town':  (0., 14., 5., 28.),
-    'ucsdpeds': (-10., 5., 0., 14.),
-    'lstn': (-5, 10, 0, 30, )
-}
+def init_model(detector, model_config, data_config):
+    if detector == 'faster_rcnn':
+        model = Faster_RCNN(model_config, data_config)
+    elif detector == 'mask_rcnn':
+        model = Mask_RCNN(model_config, data_config)
+    elif detector == 'yolo':
+        model = YOLO(model_config, data_config)     
+    elif detector == 'hog':
+        model = HOG(model_config, data_config)
+    else:
+        raise Exception('invalid model, pick one of {yolo, hog, faster_rcnn')
+
+    return model 
+
+
+def init_loader(dataset):
+    if dataset == 'oxford_town':
+        path = os.path.join('datasets', 'TownCentreXVID.avi')
+        loader = VideoLoader(path)
+
+    elif dataset == 'lstn':
+        path = os.path.join('datasets', 'lstn')
+        loader = ImageLoader(path)
+
+    elif dataset == 'ucsd':
+        path = os.path.join('datasets', 'ucsdpeds', 'vidf', 'vidf1_33_000.y')
+        loader = ImageLoader(path)
+    
+    else:
+        raise Exception('invalid dataset, pick one of {oxford_town, lstn, ucsd}')
+
+    return loader 
+
+
+def parse_dataset_config(config):
+    new_config = {}
+    new_config['name'] = config['name']
+    new_config['place'] = config['place']
+
+    new_config['roi'] = [float(item) for item in config['roi'].split(',')]
+    new_config['sub_3_lim'] = [int(item) for item in config['sub_3_lim'].split(',')]
+
+    return new_config
+
+def convert_optical_flow_tracking(data):
+    dictionaries = []
+    new_dictionaries = []
+    labels = []
+    new_data = []
+    for i, frame in enumerate(data):
+        new_data.append([i, 0.2, frame])
+        dictionary = {}
+        for j, key in enumerate(frame):
+            try:
+                dictionary[key-1] = np.array([frame[key][1], frame[key][0]])
+            except:
+                import pdb; pdb.set_trace()
+
+        labels.append(list(dictionary.keys()))
+        dictionaries.append(dictionary)
+
+    return dictionaries, labels, new_data
+
+
 
 def make_gif(results_dir):
     fp_in = results_dir + "/frame*.png"
@@ -34,7 +95,7 @@ def make_gif(results_dir):
 
     img, *imgs = [Image.open(f) for f in sorted(glob.glob(fp_in))]
     img.save(fp=fp_out, format='GIF', append_images=imgs,
-            save_all=True, duration=20, loop=0)
+            save_all=True, duration=100, loop=0)
 
 
 def decode_data(data, roi):
@@ -83,6 +144,7 @@ def count_violation_pairs(pts_all_frames, dist=2.0):
     return np.array(counts)
 
 
+
 def find_violation(pts, dist=2.0):
     """
 
@@ -98,87 +160,24 @@ def find_violation(pts, dist=2.0):
                 pairs.append((i, j))
     return pairs
 
-
-def cal_min_dists_all_frame(pts_all_frame):
-    all_min_dists = []
-    avg_min_dists = []
-    min_min_dists = []
-    for pts in pts_all_frame:
-        min_dists = cal_min_dists(pts)
-        all_min_dists.append(min_dists)
-        min_min_dists.append(min(min_dists) if len(min_dists) > 0 else None)
-        avg_min_dists.append(sum(min_dists) / len(min_dists) if len(min_dists) > 0 else None)
-
-    all_min_dists = sum(all_min_dists, [])
-
-    return all_min_dists, np.array(min_min_dists), np.array(avg_min_dists)
-
-
-def cal_min_dists(pts):
+def find_group_violations(pts, group_list, labels, dist=2.0):
     """
 
     :param pts: positions of all pedestrians in a single frame
-    :return: a list of each pedestrian's min distances to other pedestrians
+    :param dist: social distance
+    :return: a list of index pairs indicating two pedestrians who are violating social distancing
     """
-    n = len(pts)
-    ds_min = []
-    for i in range(n):
-        d_min = np.inf
-        for j in range(n):
-            # closest distance from pedestrian i to pedestrian j
-            if i != j and np.linalg.norm(pts[i] - pts[j]) < d_min:
-                d_min = np.linalg.norm(pts[i] - pts[j])
-        if d_min is not np.inf:
-            ds_min.append(d_min)
-    return ds_min
-
-
-def custom_simple_linear_regression(xs, ys, x_select):
-
-    # reference 1: http://www2.stat.duke.edu/~tjl13/s101/slides/unit6lec3H.pdf
-    # reference 2: http://statweb.stanford.edu/~susan/courses/s141/horegconf.pdf
-
-    # assume: y = a + b*x + e
-
-    def pred_interval(x_star, prob=0.95):
-        se_pred = np.sqrt(variance * (1 + 1 / n + (x_star - xs.mean()) ** 2 / s_xx))
-        t_dist = stats.t.ppf([1 - (1 - prob)/2], len(xs) - 2)
-        y_hat = x_star * b + a
-        return float(y_hat - se_pred * t_dist), float(y_hat + se_pred * t_dist)
-
-    b, a, r_value, p_value, std_err = stats.linregress(xs, ys)
-
-    print('slope b = %.6f' % b)
-    print('intercept a = %.6f' % a)
-    print('r_value = %.6f' % r_value)
-    print('p_value = %.6f' % p_value)
-    print('se_a (from package) = %.6f' % std_err)
-
-    residuals = ys - (xs * b + a)
-    n = len(residuals)
-    variance = np.sum(residuals ** 2) / (n - 2)
-    s_xx = np.sum((xs - xs.mean()) ** 2)
-    s_x = s_xx / (n - 1)
-
-    se_a = np.sqrt(variance / s_xx)
-    print('se_a_ = %.6f' % se_a)
-
-    # se_intercept_wiki = std_err * np.sqrt(np.sum(xs ** 2) / n)
-    # print('se_intercept_wiki = %.6f' % se_intercept_wiki)
-
-    preds, lbs, ubs = [], [], []  # prediction interval
-    for x in np.arange(0, np.max(xs), 0.001):
-        lb, ub = pred_interval(x)
-        preds.append(x)
-        lbs.append(lb)
-        ubs.append(ub)
-    if x_select == 'x_intercept':
-        x_select = - a / b
-    elif x_select == 'y_intercept':
-        x_select = 0.0
-    else:
-        raise Exception
-    lb_select, ub_select = pred_interval(x_select)
-
-    return a, b, preds, lbs, ubs, x_select, lb_select, ub_select
+    n = len(pts)  # number of pedestrians
+    pairs = []
+    group_pairs = []
+    for i,(key1,value1) in enumerate(pts.items()):
+        for j,(key2,value2) in enumerate(pts.items()):
+            if np.linalg.norm(value1 - value2) < dist:
+                # pairs.append((labels.index(key1), labels.index(key2)))
+                if key2 not in group_list[key1]:
+                    pairs.append((key1,key2))
+                elif key1 != key2:
+                    group_pairs.append((key1,key2))
+                
+    return pairs, group_pairs
 
