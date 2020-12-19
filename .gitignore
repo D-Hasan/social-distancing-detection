@@ -1,11 +1,7 @@
 .idea/
 __pycache__/
 *.pyc
-datasets/
-datasets
-datasets/*
 results/
-additional_detectors/
 weights/yolo*
 weights/darknet*
-ucsdpeds
+datasets/TownCentreXVID.avi
