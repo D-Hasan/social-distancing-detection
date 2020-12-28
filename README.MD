@@ -1,5 +1,5 @@
 # Social Distancing Detection
-**[Social Distancing Detection](https://github.com/D-Hasan/social-distancing-detection/raw/main/Social%20Distancing%20Detection.pdf)
+**[Social Distancing Detection](https://github.com/D-Hasan/social-distancing-detection/raw/main/Social%20Distancing%20Detection.pdf)**<br>
 Authors: Gabriel Deza, Danial Hasan, Mengyu Yang (Team GDM for CSC420)
 
 A social distancing detection pipeline that automatically detects social distancing violations from stationary camera footage. Our method takes into account "social bubbles", where groups consisting of families, couples, etc. are not classified as violations. 
