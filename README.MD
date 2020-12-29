@@ -17,10 +17,16 @@ https://github.com/sweetyy83/Lstn_fdst_dataset
 The UCSD and LSTN datasets are included in the repos but the links are provided for reference. The Oxford Town Centre dataset must be downloaded since it's too large.
 
 ## Usage
-The full pipeline consists of the following steps:
-1. Object Detection
-2. Tracking (Centroid or Optical Flow)
-3. Grouping
+The full pipeline consists of the following steps:<br>
+
+**1. Object Detection**<br>
+This step consists of detecting humans from the raw camera footage using object detection models. The output of this step are bounding boxes around each detected person in each frame.   
+
+**2. Tracking (Centroid or Optical Flow)**<br>
+Once humans are detected within each frame of video, we apply algorithms to keep track of the movement of each unique person between consecutive frames. 
+
+**3. Grouping**<br>
+Now that we know the paths each person takes throughout the video, we can then apply heuristics to determine whether a group of people are strangers who are violating social distancing or part of the same social bubble. 
 
 ### Preliminaries
 
